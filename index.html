@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>oneline</title>
-<meta name="description" content="Paste a line of text. Get a link. No server, no database.">
+<meta name="description" content="One line of text, posted for anyone who visits.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👻</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,6 +20,7 @@
     --accent: #a78bfa;
     --accent-dim: #6d5bb8;
     --ok: #7ee2a8;
+    --err: #f2917e;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
@@ -34,24 +35,54 @@
     padding: 24px;
   }
   main { width: 100%; max-width: 640px; }
-  .brand {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin-bottom: 6px;
-  }
   .brand h1 {
     font-size: 15px;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+    margin-bottom: 6px;
   }
   .brand h1 span { color: var(--accent); }
-  .tagline {
-    color: var(--muted);
-    font-size: 14px;
-    margin-bottom: 28px;
+  .tagline { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+  .lineCard {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 24px 22px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 18px;
+    line-height: 1.6;
+    word-break: break-word;
+    white-space: pre-wrap;
+    min-height: 76px;
   }
+  .lineCard.empty { color: var(--muted); font-style: italic; }
+  .meta { color: var(--muted); font-size: 12.5px; margin-top: 10px; font-family: "JetBrains Mono", monospace; }
+
+  .actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
+  button {
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  button:hover { border-color: var(--accent-dim); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.primary { background: var(--accent-dim); border-color: var(--accent-dim); }
+  button.primary:hover { background: var(--accent); border-color: var(--accent); color: #14101d; }
+  button.copied { border-color: var(--ok); color: var(--ok); }
+  button:disabled { opacity: 0.5; cursor: default; }
+
+  .composer { display: none; margin-top: 20px; }
+  .composer.open { display: block; }
   textarea {
     width: 100%;
     background: var(--surface);
@@ -61,197 +92,191 @@
     font-family: "JetBrains Mono", monospace;
     font-size: 16px;
     line-height: 1.5;
-    padding: 16px;
+    padding: 14px 16px;
     resize: none;
-    min-height: 58px;
+    min-height: 54px;
     outline: none;
-    transition: border-color 0.15s ease;
   }
   textarea:focus { border-color: var(--accent-dim); }
   textarea::placeholder { color: var(--muted); }
+  .status { font-size: 13px; margin-top: 10px; min-height: 18px; }
+  .status.ok { color: var(--ok); }
+  .status.err { color: var(--err); }
+  .status.busy { color: var(--muted); }
+  .hint { color: var(--muted); font-size: 12.5px; margin-top: 12px; line-height: 1.5; }
+  .hint a { color: var(--accent); }
 
-  /* Signature element: the link materializes under the input as you type */
-  .linkbar {
-    margin-top: 14px;
-    display: flex;
-    align-items: stretch;
-    gap: 8px;
-    opacity: 0;
-    transform: translateY(-4px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    pointer-events: none;
-  }
-  .linkbar.live { opacity: 1; transform: none; pointer-events: auto; }
-  .linkbar .url {
-    flex: 1;
-    min-width: 0;
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12.5px;
-    color: var(--muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.6;
-  }
-  .linkbar .url b { color: var(--accent); font-weight: 500; }
-  button {
-    font-family: "Space Grotesk", system-ui, sans-serif;
-    font-size: 13.5px;
-    font-weight: 500;
-    border: 1px solid var(--line);
-    background: var(--surface-2);
-    color: var(--text);
-    border-radius: 8px;
-    padding: 0 16px;
-    cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease;
-    white-space: nowrap;
-  }
-  button:hover { border-color: var(--accent-dim); }
-  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  button.copied { border-color: var(--ok); color: var(--ok); }
-
-  /* View mode (when opening a link that contains text) */
-  .view { display: none; }
-  body.viewing .compose { display: none; }
-  body.viewing .view { display: block; }
-  .view .line {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--accent);
-    border-radius: 10px;
-    padding: 22px 20px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 17px;
-    line-height: 1.6;
-    word-break: break-word;
-    white-space: pre-wrap;
-  }
-  .view .actions { display: flex; gap: 8px; margin-top: 14px; }
-  .view .actions button { padding: 10px 16px; }
-  a.newline { color: var(--muted); font-size: 13.5px; text-decoration: none; }
-  a.newline:hover { color: var(--accent); }
-
-  footer {
-    margin-top: 40px;
-    color: var(--muted);
-    font-size: 12.5px;
-    text-align: center;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; }
-  }
+  footer { margin-top: 40px; color: var(--muted); font-size: 12.5px; text-align: center; }
+  footer button { border: none; background: none; color: var(--muted); font-size: 12.5px; padding: 0; text-decoration: underline; }
+  footer button:hover { color: var(--accent); }
 </style>
 </head>
 <body>
 <main>
   <div class="brand"><h1>one<span>line</span></h1></div>
+  <p class="tagline">The current line, live from this page's own repo.</p>
 
-  <section class="compose">
-    <p class="tagline">Paste a line of text. The link below carries it — no server, no database.</p>
-    <textarea id="input" rows="1" placeholder="Paste your line here…" autofocus spellcheck="false"></textarea>
-    <div class="linkbar" id="linkbar" aria-live="polite">
-      <div class="url" id="urlPreview"></div>
-      <button id="copyLink">Copy link</button>
-    </div>
-  </section>
+  <div class="lineCard empty" id="lineCard">Loading…</div>
+  <div class="meta" id="meta"></div>
 
-  <section class="view">
-    <p class="tagline">Someone sent you this line:</p>
-    <div class="line" id="lineOut"></div>
+  <div class="actions">
+    <button id="copyText">Copy text</button>
+    <button id="togglePost">Post a new line</button>
+  </div>
+
+  <section class="composer" id="composer">
+    <textarea id="input" rows="1" placeholder="Write or paste the new line…" spellcheck="false"></textarea>
     <div class="actions">
-      <button id="copyText">Copy text</button>
-      <button id="copyLink2">Copy link</button>
-      <a class="newline" href="#" id="writeNew" style="align-self:center; margin-left:6px;">Write your own →</a>
+      <button class="primary" id="postBtn">Post</button>
+      <button id="cancelBtn">Cancel</button>
     </div>
+    <div class="status" id="status"></div>
+    <p class="hint" id="tokenHint" style="display:none">
+      Posting needs a one-time setup: create a
+      <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained GitHub token</a>
+      with access to only this repo and <b>Contents: Read and write</b> permission.
+      You'll be asked to paste it once; it stays in this browser only.
+    </p>
   </section>
 
-  <footer>Text is stored in the URL itself — share the link, share the line.</footer>
+  <footer>
+    Stored as a file in the site's GitHub repo — no server, no database.
+    <button id="forgetToken" style="display:none">Sign out of posting</button>
+  </footer>
 </main>
 
 <script>
+  // ---- CONFIG ----
+  const OWNER = "tenfreehotdogs";
+  const REPO  = "tenfreehotdogs.github.io";
+  const FILE  = "line.txt";
+  const API   = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`;
+  // ----------------
+
+  const lineCard = document.getElementById("lineCard");
+  const meta = document.getElementById("meta");
+  const composer = document.getElementById("composer");
   const input = document.getElementById("input");
-  const linkbar = document.getElementById("linkbar");
-  const urlPreview = document.getElementById("urlPreview");
-  const lineOut = document.getElementById("lineOut");
+  const statusEl = document.getElementById("status");
+  const tokenHint = document.getElementById("tokenHint");
+  const forgetBtn = document.getElementById("forgetToken");
 
-  const base = () => location.origin + location.pathname;
+  let currentText = "";
+  let currentSha = null;
 
-  function encode(text) {
-    return btoa(String.fromCharCode(...new TextEncoder().encode(text)))
-      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  }
-  function decode(hash) {
-    const b64 = hash.replace(/-/g, "+").replace(/_/g, "/");
-    const bin = atob(b64);
-    return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
-  }
+  const b64encode = (str) => btoa(String.fromCharCode(...new TextEncoder().encode(str)));
+  const b64decode = (b64) => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\n/g, "")), c => c.charCodeAt(0)));
 
-  function currentLink() {
-    return base() + "#" + encode(input.value.trim());
-  }
+  function getToken() { return localStorage.getItem("oneline_token") || ""; }
+  function setToken(t) { localStorage.setItem("oneline_token", t); refreshFooter(); }
+  function clearToken() { localStorage.removeItem("oneline_token"); refreshFooter(); }
+  function refreshFooter() { forgetBtn.style.display = getToken() ? "inline" : "none"; }
 
-  function refresh() {
-    const text = input.value.trim();
-    if (!text) { linkbar.classList.remove("live"); return; }
-    linkbar.classList.add("live");
-    const link = currentLink();
-    const shown = link.length > 70 ? link.slice(0, 46) + "…" + link.slice(-18) : link;
-    urlPreview.innerHTML = "";
-    const b = document.createElement("b");
-    b.textContent = shown;
-    urlPreview.appendChild(b);
-    // Auto-grow textarea
-    input.style.height = "auto";
-    input.style.height = input.scrollHeight + "px";
-  }
-  input.addEventListener("input", refresh);
-
-  function flash(btn, label) {
-    const old = btn.textContent;
-    btn.textContent = label;
-    btn.classList.add("copied");
-    setTimeout(() => { btn.textContent = old; btn.classList.remove("copied"); }, 1400);
-  }
-
-  document.getElementById("copyLink").addEventListener("click", async (e) => {
-    if (!input.value.trim()) return;
-    await navigator.clipboard.writeText(currentLink());
-    flash(e.target, "Copied ✓");
-  });
-
-  // View mode: if the URL contains a hash, decode and show it
-  function tryViewMode() {
-    const hash = location.hash.slice(1);
-    if (!hash) return;
+  async function load() {
     try {
-      const text = decode(hash);
-      lineOut.textContent = text;
-      document.body.classList.add("viewing");
-      document.getElementById("copyText").onclick = async (e) => {
-        await navigator.clipboard.writeText(text);
-        flash(e.target, "Copied ✓");
-      };
-      document.getElementById("copyLink2").onclick = async (e) => {
-        await navigator.clipboard.writeText(location.href);
-        flash(e.target, "Copied ✓");
-      };
-      document.getElementById("writeNew").onclick = (e) => {
-        e.preventDefault();
-        history.replaceState(null, "", base());
-        document.body.classList.remove("viewing");
-        input.value = "";
-        refresh();
-        input.focus();
-      };
-    } catch { /* malformed hash — stay in compose mode */ }
+      const res = await fetch(API + "?t=" + Date.now(), {
+        headers: { "Accept": "application/vnd.github+json" },
+        cache: "no-store"
+      });
+      if (res.status === 404) {
+        currentText = ""; currentSha = null;
+        lineCard.textContent = "Nothing posted yet.";
+        lineCard.classList.add("empty");
+        meta.textContent = "";
+        return;
+      }
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      currentSha = data.sha;
+      currentText = b64decode(data.content).replace(/\n$/, "");
+      lineCard.textContent = currentText || "Nothing posted yet.";
+      lineCard.classList.toggle("empty", !currentText);
+      meta.textContent = "";
+    } catch (e) {
+      lineCard.textContent = "Couldn't load the line. Refresh to retry.";
+      lineCard.classList.add("empty");
+    }
   }
-  tryViewMode();
-  window.addEventListener("hashchange", tryViewMode);
+
+  function setStatus(text, cls) {
+    statusEl.textContent = text;
+    statusEl.className = "status" + (cls ? " " + cls : "");
+  }
+
+  async function post() {
+    const text = input.value.trim();
+    if (!text) { setStatus("Write something first.", "err"); return; }
+
+    let token = getToken();
+    if (!token) {
+      tokenHint.style.display = "block";
+      token = (prompt("Paste your GitHub token (one-time setup — see the note below the Post button):") || "").trim();
+      if (!token) { setStatus("Posting needs a token.", "err"); return; }
+      setToken(token);
+    }
+
+    const btn = document.getElementById("postBtn");
+    btn.disabled = true;
+    setStatus("Posting…", "busy");
+    try {
+      const body = { message: "post line", content: b64encode(text + "\n") };
+      if (currentSha) body.sha = currentSha;
+      const res = await fetch(API, {
+        method: "PUT",
+        headers: {
+          "Accept": "application/vnd.github+json",
+          "Authorization": "Bearer " + token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+      if (res.status === 401 || res.status === 403) {
+        clearToken();
+        throw new Error("Token was rejected — it may be expired or missing Contents write permission. Try posting again with a fresh token.");
+      }
+      if (res.status === 409) {
+        await load();
+        throw new Error("The line changed underneath you — showing the latest. Post again.");
+      }
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      currentSha = data.content.sha;
+      currentText = text;
+      lineCard.textContent = text;
+      lineCard.classList.remove("empty");
+      setStatus("Posted ✓ Live for everyone in ~10 seconds.", "ok");
+      input.value = "";
+      setTimeout(() => { composer.classList.remove("open"); setStatus(""); }, 1800);
+    } catch (e) {
+      setStatus(e.message, "err");
+      tokenHint.style.display = "block";
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById("togglePost").addEventListener("click", () => {
+    composer.classList.toggle("open");
+    if (composer.classList.contains("open")) { input.value = currentText; input.focus(); }
+  });
+  document.getElementById("cancelBtn").addEventListener("click", () => {
+    composer.classList.remove("open"); setStatus("");
+  });
+  document.getElementById("postBtn").addEventListener("click", post);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); post(); }
+  });
+  document.getElementById("copyText").addEventListener("click", async (e) => {
+    if (!currentText) return;
+    await navigator.clipboard.writeText(currentText);
+    const b = e.target, old = b.textContent;
+    b.textContent = "Copied ✓"; b.classList.add("copied");
+    setTimeout(() => { b.textContent = old; b.classList.remove("copied"); }, 1400);
+  });
+  forgetBtn.addEventListener("click", () => { clearToken(); setStatus(""); });
+
+  refreshFooter();
+  load();
 </script>
 </body>
 </html>
